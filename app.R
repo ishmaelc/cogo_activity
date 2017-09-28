@@ -30,7 +30,7 @@ library(shinydashboard)
 
 # import CoGo historical data
 # source- https://s3.amazonaws.com/cogo-sys-data/index.html
-hist_data <- fread('2017-08_COGO_Trip_Data.csv', stringsAsFactors = F, drop = c('trip_id'))
+hist_data <- fread('2017-08_COGO_Trip_Data.csv', stringsAsFactors = F, drop = c('trip_id'),nrows = 1000)
 
 # extra dates and filter out Dependents (too few to use)
 hist_data <- hist_data %>% 
@@ -91,40 +91,40 @@ server <- function(input,output,session){
   output$duration <- renderPlotly({
     g <- ggplot(filtered(), aes(trip.minutes, fill = usertype)) +
       geom_bar(position = 'dodge')
-    ggplotly(g)
+    j <- ggplotly(g)
     })
   
   output$day <- renderPlotly({
     g <- ggplot(filtered(), aes(day, fill = usertype)) +
       geom_bar(position='dodge')
       # geom_bar(position = 'dodge')
-    ggplotly(g)
+    j <- ggplotly(g)
     })
 
   # output$month <- renderPlotly({
   output$month <- renderPlot({
     ggplot(hist_data, aes(month, fill = usertype)) +
-        geom_bar(position = 'dodge')
+      geom_bar(position = 'dodge')
         # ggplotly(t)
     })
   
   output$leaf <- renderLeaflet({
-    leaflet() %>%
-      # addTiles() %>%
-      addTiles(
-        urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-      ) %>%
-      setView(lng = -83.00150, lat = 39.96587, zoom = 13)
+    # leaflet() %>%
+    #   # addTiles() %>%
+    #   addTiles(
+    #     urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+    #     attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+    #   ) %>%
+    #   setView(lng = -83.00150, lat = 39.96587, zoom = 13)
    })
   output$leaf2 <- renderLeaflet({
-    leaflet() %>%
-      # addTiles() %>%
-      addTiles(
-        urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-      ) %>%
-      setView(lng = -83.00150, lat = 39.96587, zoom = 13)
+    # leaflet() %>%
+    #   # addTiles() %>%
+    #   addTiles(
+    #     urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+    #     attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+    #   ) %>%
+    #   setView(lng = -83.00150, lat = 39.96587, zoom = 13)
    })
 
   observe({
@@ -148,16 +148,21 @@ server <- function(input,output,session){
   })
   
 }
-  
+
 ui <- 
-  dashboardPage(
-    dashboardHeader(title = 'CoGo Activity'
+  dashboardPage(title = 'CoGo Activity',skin = 'red',
+    dashboardHeader(title = HTML(paste('CoGo Activity',icon('bicycle')))
     ),
     dashboardSidebar(
+      sidebarMenu(
+        menuItem(text = 'Map',icon = icon('map'),tabName = 'map'),
+        menuItem(text = 'Analysis',icon = icon('bar-chart'),tabName = 'analysis',selected = T),
+        menuItem(text = 'Code',icon = icon('github'),href = 'https://github.com/ishmaelc')
+      )
     ),
     dashboardBody(
-  tabsetPanel(selected = 'Analysis',
-    tabPanel(title = 'Map',
+  tabItems(
+    tabItem('map',
       fluidRow(
         # tags$script(' var setInitialCodePosition = function() { setCodePosition(false, false); }; '),
         column(width=6
@@ -170,7 +175,7 @@ ui <-
       absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE,
                     draggable = TRUE, top = 60, left = "auto", right = 20, bottom = "auto",
                     width = 330, height = "auto",
-                    h2("CoGo Explorer"),
+                    h2("CoGo Stations"),
                     selectInput('users',label = 'Users',choices = users,selected = users ,multiple = T,selectize = T),
                     # dateRangeInput('start.date',label= 'Time Span',min = dates$min.start, max = dates$max.start)
                     dateRangeInput('start.date',label= 'Time Span',start = '2017-01-01', end = '2017-08-31')
@@ -182,15 +187,24 @@ ui <-
                     #             step = 4, value = 11,ticks = F,
                     #             animate = T,post = ' Bikes')
                     ))),
-    tabPanel(title = 'Analysis',
-             sliderInput('month',label = 'Month Selector',value = 6, animate = T, min = 1,max = 12,ticks = F),
-             column(width = 6,
-               plotlyOutput('duration'),
-               plotOutput('month')
-                    ),
-             column(width= 6,
-               plotlyOutput('day')
-                    )
+    tabItem('analysis',
+             fluidRow(
+             sliderInput('month',label = 'Month Selector',value = 8, animate = T, min = 1,max = 12,ticks = F),
+               column(width = 6,
+                 plotlyOutput('duration')
+                      ),
+               column(width= 6,
+                 plotlyOutput('day')
+                      )
+             ),
+             br(),
+             fluidRow(
+               column(width = 6,
+                 plotOutput('month')
+                      ),
+               column(width= 6
+                      )
+             )
              ))
 ))
 
