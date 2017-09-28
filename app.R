@@ -2,10 +2,11 @@
 # clear objects in memory
 rm(list = ls())
 
-
 ### firewall workaround 
-# httr::set_config( config( ssl_verifypeer = 0L ) )
+# httr::set_config( httr::config( ssl_verifypeer = 0L ) )
+### install dev versions of packages
 # devtools::install_github('hadley/ggplot2')
+# devtools::install_github("ropensci/plotly")
 
 # Load packages
 
@@ -30,7 +31,7 @@ library(shinydashboard)
 
 # import CoGo historical data
 # source- https://s3.amazonaws.com/cogo-sys-data/index.html
-hist_data <- fread('2017-08_COGO_Trip_Data.csv', stringsAsFactors = F, drop = c('trip_id'),nrows = 1000)
+hist_data <- fread('2017-08_COGO_Trip_Data.csv', stringsAsFactors = F, drop = c('trip_id'))
 
 # extra dates and filter out Dependents (too few to use)
 hist_data <- hist_data %>% 
@@ -92,6 +93,8 @@ server <- function(input,output,session){
     g <- ggplot(filtered(), aes(trip.minutes, fill = usertype)) +
       geom_bar(position = 'dodge')
     j <- ggplotly(g)
+    j$elementId <- NULL
+    j
     })
   
   output$day <- renderPlotly({
@@ -99,6 +102,8 @@ server <- function(input,output,session){
       geom_bar(position='dodge')
       # geom_bar(position = 'dodge')
     j <- ggplotly(g)
+    j$elementId <- NULL
+    j
     })
 
   # output$month <- renderPlotly({
@@ -109,13 +114,13 @@ server <- function(input,output,session){
     })
   
   output$leaf <- renderLeaflet({
-    # leaflet() %>%
-    #   # addTiles() %>%
-    #   addTiles(
-    #     urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
-    #     attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
-    #   ) %>%
-    #   setView(lng = -83.00150, lat = 39.96587, zoom = 13)
+    leaflet() %>%
+      # addTiles() %>%
+      addTiles(
+        urlTemplate = "//{s}.tiles.mapbox.com/v3/jcheng.map-5ebohr46/{z}/{x}/{y}.png",
+        attribution = 'Maps by <a href="http://www.mapbox.com/">Mapbox</a>'
+      ) %>%
+      setView(lng = -83.00150, lat = 39.96587, zoom = 13)
    })
   output$leaf2 <- renderLeaflet({
     # leaflet() %>%
@@ -157,7 +162,7 @@ ui <-
       sidebarMenu(
         menuItem(text = 'Map',icon = icon('map'),tabName = 'map'),
         menuItem(text = 'Analysis',icon = icon('bar-chart'),tabName = 'analysis',selected = T),
-        menuItem(text = 'Code',icon = icon('github'),href = 'https://github.com/ishmaelc')
+        menuItem(text = 'Code',icon = icon('github'),href = 'https://github.com/ishmaelc/cogo_activity')
       )
     ),
     dashboardBody(
@@ -165,8 +170,8 @@ ui <-
     tabItem('map',
       fluidRow(
         # tags$script(' var setInitialCodePosition = function() { setCodePosition(false, false); }; '),
-        column(width=6
-          # leafletOutput('leaf',height = '700px',width='100%')
+        column(width=6,
+          leafletOutput('leaf',height = '700px',width='100%')
         ),
         column(width=6
                # plotOutput('duration')
